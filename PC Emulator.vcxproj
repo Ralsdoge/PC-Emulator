@@ -147,19 +147,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Downloads\Fake\computer(main).cpp" />
-    <ClCompile Include="..\..\..\Downloads\Fake\cpu.cpp" />
-    <ClCompile Include="..\..\..\Downloads\Fake\memory.cpp" />
-    <ClCompile Include="TestSFML.cpp" />
+    <ClCompile Include="computer(main).cpp" />
+    <ClCompile Include="cpu.cpp" />
+    <ClCompile Include="memory.cpp" />
+    <ClCompile Include="screen.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\Downloads\Fake\cpu.h" />
-    <ClInclude Include="..\..\..\Downloads\Fake\instructions.h" />
-    <ClInclude Include="..\..\..\Downloads\Fake\memory.h" />
-    <ClInclude Include="..\..\..\Downloads\Fake\passthrough.h" />
+    <ClInclude Include="cpu.h" />
+    <ClInclude Include="instructions.h" />
+    <ClInclude Include="memory.h" />
+    <ClInclude Include="passthrough.h" />
+    <ClInclude Include="screen.h" />
   </ItemGroup>
   <ItemGroup>
-    <Font Include="..\..\..\Downloads\Fake\InputMonoNarrow-Light.ttf" />
+    <Font Include="InputMonoNarrow-Light.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
