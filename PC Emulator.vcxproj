@@ -149,11 +149,13 @@
   <ItemGroup>
     <ClCompile Include="computer(main).cpp" />
     <ClCompile Include="cpu.cpp" />
+    <ClCompile Include="GPU.cpp" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="screen.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cpu.h" />
+    <ClInclude Include="GPU.h" />
     <ClInclude Include="instructions.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="passthrough.h" />
