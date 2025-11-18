@@ -20,8 +20,9 @@ int main() {
 	*/
 
 	// Screen setup
-	Screen mainScreen = Screen(512,512,1,4,1);
-
+	Screen mainScreen = Screen(512,512,0,4,1);
+	mainScreen.loadCSVImage("Path to image here!"); // Load test image into screen
+	mainScreen.Render(mainScreen.getWindowILLEGAL()); // Render once to display loaded image
 	//GPU //EX: gpu(&ram1, Screen(60, 40, false, 4, 3));
 	GPU gpu(memory,mainScreen); // Create GPU with memory and screen reference
 	

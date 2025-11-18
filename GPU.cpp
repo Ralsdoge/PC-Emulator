@@ -71,7 +71,7 @@ void GPU::pixelDraw() {
 	} 
 	else {//greyscale
 		//if (!QuickDraw) enabled here (3 channel greyscale)
-			ColorDat[0] = ColorDat[1] = ColorDat[2] = mem.read(COLOR_R);
+			ColorDat[0] = ColorDat[1] = ColorDat[2] = read(COLOR_R);
 	}
 	scr.drawPixel(pix_X, pix_T, ColorDat);
 }

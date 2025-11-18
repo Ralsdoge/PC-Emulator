@@ -35,6 +35,8 @@ public:
 	void drawPixel(int x, int y, uint8_t value[3], bool directin = false, bool GreyChannelmode = false);
     void drawScreen(std::vector<uint24_t> bitmap);
 	uint32_t FHardwareInfoRequest();
+	bool loadCSVImage(const std::string& absolutePath);
+	sf::RenderWindow& getWindowILLEGAL() { return window; }
 private:
     const int sizeX;
     const int sizeY;
