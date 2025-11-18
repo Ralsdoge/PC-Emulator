@@ -1,7 +1,10 @@
 #include "screen.h"
 #include <SFML/Graphics.hpp>
 #include <sstream>
+#include <tuple> //for carring multiple bytes of color data between methods
 #include "stdexcept"
+#include <cstdint> // bit types
+
 
 //Reused Variables
 int startX = 6; //5 + 1;
@@ -21,76 +24,139 @@ bool loadGlobalFont(const std::string& path) {
     return fontLoaded;
 }
 
-static sf::RenderTexture Flipframe; // Off-screen render texture for saving individual frames
+static sf::RenderTexture WrongFlipframe; // Off-screen render texture for saving individual frames
 
-Screen::Screen(int x, int y, bool color, int depth, int screenMap):
+Screen::Screen(int x, int y, bool color, int depth, int screenMap, int Grey3Channel):
     sizeX(x),
     sizeY(y),
     resolution(x * y),
     color(color),
     bitDepth(depth),
-	screenMap(screenMap)
+	screenMap(screenMap),
+	Grey3Channel(Grey3Channel),
+	window(sf::VideoMode(x * screenMap + 8, y * screenMap + 48), "Screen Window") // Wow, it's the object unique window
+
 {
-    static sf::RenderWindow window(sf::VideoMode({windowW, windowH}), "Screen Window"); // Window create
-    static sf::RenderTexture Flipframe; // Off-screen render texture
+	unsigned int windowW = Screen::sizeX * Screen::screenMap + 8; // Preload vars with window sizes
+	unsigned int windowH = Screen::sizeY * Screen::screenMap + 48; // since you cannot in the function call
+    //static sf::RenderWindow window(sf::VideoMode({windowW, windowH}), "Screen Window"); // Window create
+    static int frameCounter = 0;
+	//static sf::RenderTexture Flipframe; // Off-screen render texture
 
     // Create or recreate off-screen texture if needed
-    if (Flipframe.getSize().x != windowW|| Flipframe.getSize().y != windowH) {
-        if (!Flipframe.create(windowW, windowH)) {
-            throw std::runtime_error("Failed to create render texture with window size");
-        }
+    if (!Flipframe.create(windowW, windowH)) {
+        throw std::runtime_error("Failed to create render texture with window size");
     }
+};
+
+void Screen::Render(sf::RenderWindow& window) {
+	//sf::Image img;
+	//img.create(w,h,sf::Color::Black);
+	
+	//Display flipframe so its ready for drawing to window
+	Flipframe.display();
+
+    // Draw to on-screen window 
+    sf::Sprite spr(Flipframe.getTexture());
+    window.clear();
+    window.draw(spr);
+    window.display();
+
+	Screen::Flipframe.display();
 }
-void Screen::drawPixel(int x, int y, int value, bool directin) {
-	int pixelX;
-	int pixelY;
-	if (!directin) { // if not already calculated, calculate pixel pos.
-		int pixelX = startX + (x * screenMap);
-		int pixelY = startY + (y * screenMap);
-	}
+void Screen::drawPixel(int x, int y, uint8_t value[3], bool directin, bool Grey3Channel) {
+    int pixelX = 0;
+    int pixelY = 0;
+    if (!directin) { // if not already calculated, calculate pixel pos.
+        int pixelX = startX + (x * screenMap);
+        int pixelY = startY + (y * screenMap);
+    }
 	else { // if pre-calculated, passthrough values
-		int pixelX = x;
-		int pixelY = y;
-	}
-	// Simulated Computer Pixels
-	// Size on screen
-	sf::RectangleShape cell({ static_cast<float>(screenMap),static_cast<float>(screenMap) }); //needs to be floats or SFML yells at you
-	// Position
-	cell.setPosition(pixelX, pixelY);
-	// Pre procesing (does ask meet abilities of "simulated display")
-	// Bit depth
-	//bitDepth / 256 can map any 8 bit to a lower bit depth.
-	// otherwise can use bitdepth to multiply up to 8 bit.
-	int scalefac = 256 / (1 << bitDepth);
+        int pixelX = x;
+        int pixelY = y;
+    }
+    // Simulated Computer Pixels
+    // Size on screen
+    sf::RectangleShape cell({ static_cast<float>(screenMap),static_cast<float>(screenMap) }); //needs to be floats or SFML yells at you
+    // Position
+    cell.setPosition(pixelX, pixelY);
+    // Pre procesing (does ask meet abilities of "simulated display")
+    // Bit depth
+        //bitDepth / 256 can map any 8 bit to a lower bit depth.
+        // otherwise can use bitdepth to multiply up to 8 bit.
+    int scalefac = 256 / (1 << bitDepth);
 
-	void Screen::drawScreen(sf::Vector2u map) {
-		//clear screen, can do a selective clearing of an icremental counter if one is added.
-		Flipframe.clear(sf::Color(20, 20, 20)); // curently clearing whole screen but if it takes a few cycles to issue a draw pixel command I think it shouldn't 
+    // Color capabilitiy
+    if (!color) {
+        int tc = value[0] * scalefac; //temp color
+        cell.setFillColor(sf::Color(tc, tc, tc));
+    }
+    else {
+        //split value upinto RGB components
+        int R = value[0] * scalefac;
+        int G = value[1] * scalefac;
+        int B = value[2] * scalefac;
+        int tc = 256 / (1 << bitDepth); //temp color
+        cell.setFillColor(sf::Color(R, G, B));
+    }
+    Flipframe.draw(cell);
+};
 
-		//Title text
-		loadGlobalFont("InputMonoNarrow-Light.ttf");
+void Screen::drawScreen(std::vector<uint24_t> bitmap) {
+    //clear screen, can do a selective clearing of an icremental counter if one is added.
+    Flipframe.clear(sf::Color(20, 20, 20)); // curently clearing whole screen but if it takes a few cycles to issue a draw pixel command I think it shouldn't 
 
-		std::stringstream ss;
-		ss << std::uppercase << std::setw(2) << std::setfill('0') << resolution << " (" << sizeX << "x" << sizeY << ":";
-		sf::Text txt(ss.str(), globalFont, 30);
-		txt.setFillColor(sf::Color::White);
-		txt.Bold; // ???
-		txt.setPosition({ 10,5 });
-		Flipframe.draw(txt);
+    //Title text
+    loadGlobalFont("InputMonoNarrow-Light.ttf");
 
-		// Screen box
-		sf::RectangleShape panelBg;
-		panelBg.setPosition({ 0, 40 });
-		float RectW = (sizeX * screenMap) + 2; //Neccessary, unfortunately
-		float RectH = (sizeY * screenMap) + 2;
-		panelBg.setSize({RectW,RectH});
-		panelBg.setFillColor(sf::Color(30, 30, 30));
-		panelBg.setOutlineColor(sf::Color(100, 100, 100));
-		panelBg.setOutlineThickness(2);
+    std::stringstream ss;
+    ss << std::uppercase << std::setw(2) << std::setfill('0') << resolution << " (" << sizeX << "x" << sizeY << ":";
+    sf::Text txt(ss.str(), globalFont, 30);
+    txt.setFillColor(sf::Color::White);
+    txt.setPosition({ 10,5 });
+    Flipframe.draw(txt);
 
-		for (int i = 0; i < resolution; i++) {
-			//sf::Vector2u map //Break vector into individual pixel data.
-			int value = map.x + (map.y << 8); // temp value from map vector
-			Screen::drawPixel(startX + i % sizeX * screenMap, startY + i / sizeX * screenMap, value);
-		}
-	}
+    // Screen box
+    sf::RectangleShape panelBg;
+    panelBg.setPosition({ 0, 40 });
+	float RectW = (Screen::sizeX * screenMap) + 2; //Neccessary, unfortunately
+    float RectH = (Screen::sizeY * screenMap) + 2;
+    panelBg.setSize({RectW,RectH});
+    panelBg.setFillColor(sf::Color(30, 30, 30));
+    panelBg.setOutlineColor(sf::Color(100, 100, 100));
+    panelBg.setOutlineThickness(2);
+
+    for (int i = 0; i < resolution; i++) {
+        //sf::Vector2u map //Break vector into individual pixel data.
+		if (!color) { // greyscale
+			if (!Grey3Channel) { //single pixel
+				uint8_t value[3] = {0x5F, 0x00, 0x00}; // temp value
+				Screen::drawPixel(startX + i % sizeX * screenMap, startY + i / sizeX * screenMap, value, true);
+			}
+			else { // 3 simoultaniously
+				uint8_t value[3] = {0x0F, 0x4F, 0x8F}; // temp value
+				Screen::drawPixel(startX + i % sizeX * screenMap, startY + i / sizeX * screenMap, value, true, true);
+			}
+		}  
+		else {
+			//std::tuple<uint8_t, uint8_t, uint8_t>
+			uint8_t value3[3] = {0x5F, 0x3A, 0xC2}; // temp value
+			Screen::drawPixel(startX + i % sizeX * screenMap, startY + i / sizeX * screenMap, value3, true);
+
+		} 
+    };
+
+}
+
+uint32_t Screen::FHardwareInfoRequest() {
+    uint32_t flag_btyes = 0x00000000;
+	//For every atribute possibly needed, set bits in flag_bytes to represent it.
+	// Flag bytes OR(+) with Screen space value shifted to correct bit position)
+	bool colorSet = Screen::color; //Far left
+    flag_btyes |= (uint32_t(color & 0x1) << 31);         // 1 bit for color capability
+    flag_btyes |= (uint32_t(bitDepth & 0x07) << 28);     // 3 bits for bit depth
+    flag_btyes |= (uint32_t(sizeX & 0x0FFF) << 16);      // 12 bits for X resolution
+    flag_btyes |= (uint32_t(sizeY & 0x0FFF) << 4);       // 12 bits for Y resolution
+	//1 + 3 + 12 + 12 = 28 ... 4 unused bits
+    return flag_btyes;
+}

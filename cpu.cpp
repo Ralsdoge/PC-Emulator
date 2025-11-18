@@ -1,8 +1,10 @@
 #include "cpu.h"
 #include <iostream>
+#include "gpu.h"
 
-CPU::CPU(std::vector<Memory*>& mems) //constructor
- : memories(mems),
+CPU::CPU(std::vector<Memory*>& mems, GPU* gpu = nullptr): //constructor 
+memories(mems), 
+gpuDevice(gpu), 
 ACC(0),
 PC(0),
 halted(false)
@@ -40,7 +42,9 @@ void CPU::step() {
     uint8_t opcode = mem->read(PC - mem->base); //fetch
     PC++;
     execute(opcode);
-
+	if (gpuDevice) {
+            gpuDevice->tick();
+	}
     //pause for step by step here
 
 }

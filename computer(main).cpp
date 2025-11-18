@@ -9,12 +9,28 @@
 
 int main() {
     // Alocate and set up memory 
-    Memory ram1(0,256); // Create
-	std::vector<Memory*> memory = { &ram1 }; // add to vector to combine for the CPU
-    /*Memory ram2(256,1024); // Create
-    std::vector<Memory*> memory = { &ram1, &ram2 };*/
-	CPU cpu(memory); // Feed memory to CPU
+	Memory ram1(0, 256); // Create 256 byte RAM at address 0
+	//Memory Vram(256, 1024); // Create 1024 byte RAM at address 256
+
+	std::vector<Memory*> memory = { &ram1 }; // add to vector to combine multiple ram together for the CPU
     
+	/*//Example of multiple sticks of ram:
+	Memory ram2(256,1024); // Create
+    std::vector<Memory*> memory = { &ram1, &ram2 };
+	*/
+
+	// Screen setup
+	Screen mainScreen = Screen(512,512,1,4,1);
+
+	//GPU //EX: gpu(&ram1, Screen(60, 40, false, 4, 3));
+	GPU gpu(memory,mainScreen); // Create GPU with memory and screen reference
+	
+	// CPU setup
+	CPU cpu(memory, nullptr); // Feed memory and GPU pointer to CPU
+	
+	
+
+
 	// Write program to memory
     ram1.write(0, LDA); ram1.write(1, 10);
     ram1.write(2, ADD); ram1.write(3, 11);
